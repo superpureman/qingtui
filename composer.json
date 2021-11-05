@@ -1,0 +1,12 @@
+{
+    "name": "qingtui/qingtui_api",
+    "description": "This is the interface implementation of qnigtui development document",
+    "type": "library",
+    "autoload": {
+        "psr-4": {
+            "Qingtui\\QingtuiApi\\": "src/"
+        }
+    },
+    "minimum-stability": "dev",
+    "require": {}
+}
