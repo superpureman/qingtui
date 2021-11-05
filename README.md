@@ -4,3 +4,16 @@
 https://www.qingtui.com/devdoc/ 
 #轻推支持轻应用和订阅号两种类型，区别如下：
 轻应用：偏向于功能，可用于企业中含业务逻辑处理、功能操作等场景的工作，支持连接各种企业业务系统。 订阅号：偏向于内容，可用于企业文化建设、内部新闻、党建、员工培训等工作，支持连接各种为企业成员提供资讯的信息平台。 关于轻应用和订阅号的详细介绍，可以参见轻推帮助中心。https://qingtui.kf5.com/hc/
+
+#使用
+
+$config = ['app_id' => 'xxx', 'secret' => 'xxx'];
+$redis = new Client(
+    [
+        'host' => '127.0.0.1',
+        'port' => 6379,
+    ]
+);
+$obj = new QingtuiApi($config, $redis);
+
+$obj->getAccessToken();
