@@ -104,10 +104,7 @@ class QingtuiApi
     public function getAccessToken()
     {
         // 从缓存中读取access token
-        $this->redis->set('qingtui_api_access_token', '');
-
         $accessToken = $this->redis->get('qingtui_api_access_token');
-
         //如果文件为空，说明还未写入参数是第一次请求
         if (empty($accessToken)) {
             $input           = [];
@@ -715,10 +712,12 @@ class QingtuiApi
         $input['url']    = self::GET_ORG_LIST_URL;
         $input['params'] = [
             'access_token' => $this->getAccessToken(),
-            'org_id'       => $params['org_id'],
             'page_size'    => $params['page_size'],
             'request_page' => $params['request_page'],
         ];
+        if (isset($params['org_id'])) {
+            $input['params']['org_id'] = $params['org_id'];
+        }
         $this->response($input);
     }
 
