@@ -657,15 +657,7 @@ class QingtuiApi
         $input['params'] = [
             'org_id' => $params['org_id'],
         ];
-        if (isset($params['name'])) {
-            $input['params']['name'] = $params;
-        }
-        if (isset($params['sequence'])) {
-            $input['params']['sequence'] = $params['sequence'];
-        }
-        if (isset($params['auto_sequence'])) {
-            $input['params']['autoSequence'] = $params['auto_sequence'];
-        }
+
         $this->response($input, 'POST_URL');
     }
 
