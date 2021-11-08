@@ -52,6 +52,11 @@ class QingtuiApi
     const SEND_TEXT_CARD_MESSAGE_TO_SOME_PEOPLE_URL = 'https://open.qingtui.cn/v1/message/textCard/send/mass';
     // 消息推送-发送消息-文本卡片消息-发文本卡片消息至群聊
     const SEND_TEXT_CARD_MESSAGE_TO_GROUP_CHAT_URL = 'https://open.qingtui.cn/v1/message/textCard/send/channel';
+    // 消息推送-发送消息-图文消息-单发图文消息
+    const SEND_SINGLE_IMAGE_TEXT_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/news/send/single';
+    // 消息推送-发送消息-图文消息-给部分人发图文消息
+    const SEND_IMAGE_TEXT_MESSAGE_PART_URL = 'https://open.qingtui.cn/v1/message/news/send/mass';
+
     // 消息推送-发送消息-待办消息-单发待办消息
     const SEND_SINGLE_TO_DO_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/process/send/single';
     // 消息推送-发送消息-待办消息-给部分人发待办消息
@@ -61,12 +66,16 @@ class QingtuiApi
     // 通讯录管理
     // 通讯录管理-企业成员管理-获取企业内所有成员
     const GET_ALL_COMPANY_MEMBERS_URL = 'https://open.qingtui.cn/team/member/all/paged';
+    // 通讯录管理-企业成员管理-获取组织机构内成员
+    const GET_ORG_MEMBERS_URL = 'https://open.qingtui.cn/team/member/org/paged';
     // 通讯录管理-企业成员管理-创建成员
     const ADD_MEMBER_URL = 'https://open.qingtui.cn/team/member/create/single';
     // 通讯录管理-企业成员管理-删除成员
     const DELETE_MEMBER_URL = 'https://open.qingtui.cn/team/member/delete/single';
     // 通讯录管理-企业成员管理-更新成员
     const UPDATE_MEMBER_URL = 'https://open.qingtui.cn/team/member/update/single';
+    // 通讯录管理-企业成员管理-成员信息变更同步
+    const MEMBER_INFO_CHANGE_SYNC_URL = 'https://open.qingtui.cn/team/member/sync';
     // 通讯录管理-企业组织机构管理-获取企业Id
     const GET_COMPANY_ID_URL = 'https://open.qingtui.cn/team/domain/id/get';
     // 通讯录管理-企业组织机构管理-创建组织机构
@@ -77,6 +86,10 @@ class QingtuiApi
     const MODIFY_ORG_URL = 'https://open.qingtui.cn/team/org/update';
     // 通讯录管理-企业组织机构管理-分页获取组织机构列表
     const GET_ORG_LIST_URL = 'https://open.qingtui.cn/team/org/paged';
+    // 通讯录管理-企业组织机构管理-获取组织机构详情
+    const GET_ORG_DETAILS_URL = 'https://open.qingtui.cn/team/org/detail';
+    // 通讯录管理-企业组织机构管理-组织机构变更同步
+    const ORG_SYNC_URL = 'https://open.qingtui.cn/team/org/sync';
 
     /**
      * 配置app_id、app_secret参数
@@ -98,11 +111,15 @@ class QingtuiApi
 
     /**
      * 获取access token
+     * @param bool $isRemove
      * @return mixed
      * @throws Exception
      */
-    public function getAccessToken()
+    public function getAccessToken($isRemove = false)
     {
+        if ($isRemove) {
+            $this->redis->set('qingtui_api_access_token', '');
+        }
         // 从缓存中读取access token
         $accessToken = $this->redis->get('qingtui_api_access_token');
         //如果文件为空，说明还未写入参数是第一次请求
@@ -446,6 +463,99 @@ class QingtuiApi
     }
 
     /**
+     * 图文消息-单发图文消息
+     * article_list 入参
+     * [{"title":"路透社与Ipsos合作的调查显示，75%的美国用户仍然每天使用Facebook",
+     * "url":"https://www.qingtui.cn",
+     * "content":"该调查样本覆盖了美国大陆、夏威夷以及阿拉斯加2194位18岁以上用户，其中包括1938位其中包括1938",
+     * "thumbMediaId":"95ee6faef5d69"}]
+     * @param $openId
+     * @param $articleList
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendSingleImageTextMessage($openId, $articleList)
+    {
+        if (!$openId || empty($articleList)) {
+            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_SINGLE_IMAGE_TEXT_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_user' => $openId,
+            'message' => [
+                'article_list' => $articleList,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 图文消息-给部分人发图文消息
+     * to_users 参数
+     * ["OPENID1",
+     * "OPENID2",
+     * "OPENID3",
+     * "OPENID4",
+     * "OPENID5"]
+     * article_list 参数
+     * [{"title":"路透社与Ipsos合作的调查显示，75%的美国用户仍然每天使用Facebook",
+     * "url":"https://www.qingtui.cn",
+     * "content":"该调查样本覆盖了美国大陆、夏威夷以及阿拉斯加2194位18岁以上用户，其中包括1938位其中包括1938",
+     * "thumbMediaId":"95ee6faef5d69"}]
+     * @param $openIds
+     * @param $articleList
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendImageTextMessagePart($openIds, $articleList)
+    {
+        if (empty($openIds) || !is_array($openIds) || empty($articleList)) {
+            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_IMAGE_TEXT_MESSAGE_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_users' => $openIds,
+            'message'  => [
+                'article_list' => $articleList,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 图文消息-群发图文消息
+     * article_list 参数
+     * [{"title":"路透社与Ipsos合作的调查显示，75%的美国用户仍然每天使用Facebook",
+     * "url":"https://www.qingtui.cn",
+     * "content":"该调查样本覆盖了美国大陆、夏威夷以及阿拉斯加2194位18岁以上用户，其中包括1938位其中包括1938",
+     * "thumbMediaId":"95ee6faef5d69"}]
+     * @param $openIds
+     * @param $articleList
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendImageTextMessageMass($articleList)
+    {
+        if (empty($articleList)) {
+            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_IMAGE_TEXT_MESSAGE_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'message' => [
+                'article_list' => $articleList,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+
+    /**
      * 单发待办消息
      * @param $params
      * @return false|string
@@ -512,6 +622,31 @@ class QingtuiApi
             'open_id' => $openId,
         ];
         $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 获取组织机构内成员
+     * @param $params
+     * @return false|string
+     * @throws Exception
+     */
+    public function getOrgMembers($params)
+    {
+        if (empty($params)
+            || empty($params['org_id'])
+            || empty($params['page_size'])
+            || empty($params['request_page'])) {
+            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        }
+        $input           = [];
+        $input['url']    = self::GET_ORG_MEMBERS_URL;
+        $input['params'] = [
+            'access_token' => $this->getAccessToken(),
+            'org_id'       => $params['org_id'],
+            'page_size'    => $params['page_size'],
+            'request_page' => $params['request_page'],
+        ];
+        $this->response($input);
     }
 
     /**
@@ -598,6 +733,28 @@ class QingtuiApi
             'employee_id' => $params['employee_id'],
         ];
         $this->response($input, 'POST_URL');
+    }
+
+    /**
+     * 企业成员管理-成员信息变更同步
+     * @param $params
+     * @return false|string
+     * @throws Exception
+     */
+    public function memberInfoChangeSync($params)
+    {
+        if (empty($params)) {
+            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        }
+        $input           = [];
+        $input['url']    = self::MEMBER_INFO_CHANGE_SYNC_URL;
+        $input['params'] = [
+            'access_token' => $this->getAccessToken(),
+            'sync_time'    => $params['sync_time'],
+            'page_size'    => $params['page_size'],
+            'request_page' => $params['request_page'],
+        ];
+        $this->response($input);
     }
 
     /**
@@ -710,6 +867,46 @@ class QingtuiApi
         if (isset($params['org_id'])) {
             $input['params']['org_id'] = $params['org_id'];
         }
+        $this->response($input);
+    }
+
+    /**
+     * 企业组织机构管理-获取组织机构详情
+     * @param $orgId
+     * @return false|string
+     * @throws Exception
+     */
+    public function getOrganizationDetails($orgId)
+    {
+        if (empty($orgId)) {
+            return json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
+        }
+        $input           = [];
+        $input['url']    = self::GET_ORG_DETAILS_URL;
+        $input['params'] = [
+            'access_token' => $this->getAccessToken(),
+            'org_id'       => $orgId,
+        ];
+        $this->response($input);
+    }
+
+    /**
+     * 企业组织机构管理-组织机构变更同步
+     * @param $syncTime
+     * @return false|string
+     * @throws Exception
+     */
+    public function organizationChangeSync($syncTime)
+    {
+        if (empty($syncTime)) {
+            return json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
+        }
+        $input           = [];
+        $input['url']    = self::ORG_SYNC_URL;
+        $input['params'] = [
+            'access_token' => $this->getAccessToken(),
+            'sync_time'    => $syncTime,
+        ];
         $this->response($input);
     }
 
