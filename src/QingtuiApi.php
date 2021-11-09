@@ -56,6 +56,25 @@ class QingtuiApi
     const SEND_SINGLE_IMAGE_TEXT_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/news/send/single';
     // 消息推送-发送消息-图文消息-给部分人发图文消息
     const SEND_IMAGE_TEXT_MESSAGE_PART_URL = 'https://open.qingtui.cn/v1/message/news/send/mass';
+    // 消息推送-发送消息-图文消息-群发图文消息
+    const SEND_IMAGE_TEXT_MESSAGE_MASS_URL = 'https://open.qingtui.cn/v1/message/news/send/service';
+    // 消息推送-发送消息-图文消息-发图文消息至群聊
+    const SEND_IMAGE_TEXT_MESSAGE_TO_GROUP_URL = 'https://open.qingtui.cn/v1/message/news/send/channel';
+
+    // 消息推送-发送消息-图文消息-单发key-value消息
+    const SEND_SINGLE_KV_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/keyValue/send/single';
+    // 消息推送-发送消息-图文消息-给部分人发key-value消息
+    const SEND_KV_MESSAGE_TO_PART_URL = 'https://open.qingtui.cn/v1/message/keyValue/send/mass';
+    // 消息推送-发送消息-图文消息-发key-value消息至群聊
+    const SEND_KV_MESSAGE_TO_GROUP_URL = 'https://open.qingtui.cn/v1/message/keyValue/send/channel';
+    // 消息推送-发送消息-文件消息-单发文件消息
+    const SEND_SINGLE_FILE_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/file/send/single';
+    // 消息推送-发送消息-文件消息-群发文件消息
+    const SEND_FILE_MESSAGE_MASS_URL = 'https://open.qingtui.cn/v1/message/file/send/service';
+    // 消息推送-发送消息-文件消息-给部分人发文件消息
+    const SEND_FILE_MESSAGE_TO_PART_URL = 'https://open.qingtui.cn/v1/message/file/send/mass';
+    // 消息推送-发送消息-文件消息-单发文件消息
+    const SEND_FILE_MESSAGE_TO_GROUP_URL = 'https://open.qingtui.cn/v1/message/file/send/channel';
 
     // 消息推送-发送消息-待办消息-单发待办消息
     const SEND_SINGLE_TO_DO_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/process/send/single';
@@ -63,6 +82,14 @@ class QingtuiApi
     const SEND_SINGLE_TO_DO_MESSAGE_TO_PART_URL = 'https://open.qingtui.cn/v1/message/process/send/mass';
     // 消息推送-发送消息-待办消息-待办消息置为已处理
     const SET_PENDING_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/process/complete';
+    //消息推送-发送消息-卡片消息-单发卡片消息
+    const SEND_SINGLE_CARD_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/card/send/single';
+    //消息推送-发送消息-卡片消息-群发卡片消息
+    const SEND_CARD_MESSAGE_MASS_URL = 'https://open.qingtui.cn/v1/message/card/send/service';
+    //消息推送-发送消息-卡片消息-单发卡片消息
+    const SEND_CARD_MESSAGE_TO_PART_URL = 'https://open.qingtui.cn/v1/message/card/send/mass';
+    //消息推送-发送消息-卡片消息-发卡片消息至群聊
+    const SEND_CARD_MESSAGE_TO_GROUP_URL = 'https://open.qingtui.cn/v1/message/card/send/channel';
     // 通讯录管理
     // 通讯录管理-企业成员管理-获取企业内所有成员
     const GET_ALL_COMPANY_MEMBERS_URL = 'https://open.qingtui.cn/team/member/all/paged';
@@ -186,6 +213,50 @@ class QingtuiApi
         }
     }
 
+
+    /**
+     * 上传多媒体文件
+     * @param $type
+     * @param $filePath
+     * @return bool
+     * @throws Exception
+     */
+    public function uploadMultimediaFile($type, $filePath)
+    {
+        if (!in_array($type, ['file', 'image']) || !file_exists($filePath)) {
+            echo json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
+            return false;
+        }
+
+        if ($type == 'image') {
+            $isAllow   = ['jpg', 'jpeg', 'png'];
+            $tmp       = explode('.', $filePath);
+            $extension = end($tmp);
+
+            if (!in_array(strtolower($extension), $isAllow)) {
+                echo json_encode(['errcode' => '40005', 'errmsg' => '不合法的文件类型']);
+                return false;
+            }
+            if (filesize($filePath) > 1024 * 1024 * 3) {
+                echo json_encode(['errcode' => '40009', 'errmsg' => '不合法的图片文件大小']);
+                return false;
+            }
+        } else {
+            if (filesize($filePath) > 1024 * 1024 * 30) {
+                echo json_encode(['errcode' => '40009', 'errmsg' => '不合法的图片文件大小']);
+                return false;
+            }
+        }
+        $input        = [];
+        $input['url'] = 'https://open.qingtui.cn/v1/media/upload?access_token=' . $this->getAccessToken() . '&type=' . $type;
+
+        $input['params'] = [
+            'media' => new \CURLFile($filePath, mime_content_type($filePath)),
+        ];
+        $this->response($input, 'POST');
+    }
+
+
     /**
      * 单发文字消息
      * @param $openId
@@ -196,7 +267,8 @@ class QingtuiApi
     public function sendSingleTextMessage($openId, $content)
     {
         if (empty($openId) || empty($content)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -220,7 +292,8 @@ class QingtuiApi
     public function massTextMessaging($content)
     {
         if (empty($content)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -243,7 +316,8 @@ class QingtuiApi
     public function sendTextMessagesPart($openIds, $content)
     {
         if (empty($openIds) || empty($content) || !is_array($openIds)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -267,7 +341,8 @@ class QingtuiApi
     public function sendTextMessageToGroupChat($channelId, $content)
     {
         if (empty($channelId) || empty($content)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -291,7 +366,8 @@ class QingtuiApi
     public function singlePictureMessage($openId, $mediaId)
     {
         if (empty($openId) || empty($mediaId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -314,7 +390,8 @@ class QingtuiApi
     public function groupPictureMessage($mediaId)
     {
         if (empty($mediaId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -337,7 +414,8 @@ class QingtuiApi
     public function sendPictureMessageToPart($openIds, $mediaId)
     {
         if (empty($openIds) || empty($mediaId) || !is_array($openIds)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -361,7 +439,8 @@ class QingtuiApi
     public function sendPictureMessageToGroupChat($channelId, $mediaId)
     {
         if (empty($channelId) || empty($mediaId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -384,7 +463,8 @@ class QingtuiApi
     public function singleTextCardMessage($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input        = [];
         $input['url'] = self::SEND_SINGLE_TEXT_CARD_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -413,7 +493,8 @@ class QingtuiApi
     public function sendTextCardMessageToSomePeople($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input        = [];
         $input['url'] = self::SEND_TEXT_CARD_MESSAGE_TO_SOME_PEOPLE_URL . '?access_token=' . $this->getAccessToken();
@@ -442,7 +523,8 @@ class QingtuiApi
     public function sendTextCardMessageToGroupChat($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input        = [];
         $input['url'] = self::SEND_TEXT_CARD_MESSAGE_TO_GROUP_CHAT_URL . '?access_token=' . $this->getAccessToken();
@@ -477,7 +559,8 @@ class QingtuiApi
     public function sendSingleImageTextMessage($openId, $articleList)
     {
         if (!$openId || empty($articleList)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -490,6 +573,36 @@ class QingtuiApi
         ];
         $this->response($input, 'POST_JSON');
     }
+
+    /**
+     * 图文消息-群发图文消息
+     * article_list 参数
+     * [{"title":"路透社与Ipsos合作的调查显示，75%的美国用户仍然每天使用Facebook",
+     * "url":"https://www.qingtui.cn",
+     * "content":"该调查样本覆盖了美国大陆、夏威夷以及阿拉斯加2194位18岁以上用户，其中包括1938位其中包括1938",
+     * "thumbMediaId":"95ee6faef5d69"}]
+     * @param $openIds
+     * @param $articleList
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendImageTextMessageMass($articleList)
+    {
+        if (empty($articleList)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_IMAGE_TEXT_MESSAGE_MASS_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'message' => [
+                'article_list' => $articleList,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
 
     /**
      * 图文消息-给部分人发图文消息
@@ -512,7 +625,8 @@ class QingtuiApi
     public function sendImageTextMessagePart($openIds, $articleList)
     {
         if (empty($openIds) || !is_array($openIds) || empty($articleList)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
@@ -527,33 +641,237 @@ class QingtuiApi
     }
 
     /**
-     * 图文消息-群发图文消息
+     * 图文消息-发图文消息至群聊
      * article_list 参数
      * [{"title":"路透社与Ipsos合作的调查显示，75%的美国用户仍然每天使用Facebook",
      * "url":"https://www.qingtui.cn",
      * "content":"该调查样本覆盖了美国大陆、夏威夷以及阿拉斯加2194位18岁以上用户，其中包括1938位其中包括1938",
      * "thumbMediaId":"95ee6faef5d69"}]
-     * @param $openIds
+     * @param $channelId
      * @param $articleList
      * @return false|string
      * @throws Exception
      */
-    public function sendImageTextMessageMass($articleList)
+    public function sendImageTextMessageToGroup($channelId, $articleList)
     {
-        if (empty($articleList)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+        if (!$channelId || empty($articleList)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
 
         $input           = [];
-        $input['url']    = self::SEND_IMAGE_TEXT_MESSAGE_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['url']    = self::SEND_IMAGE_TEXT_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
         $input['params'] = [
-            'message' => [
+            'channel_id' => $channelId,
+            'message'    => [
                 'article_list' => $articleList,
             ]
         ];
         $this->response($input, 'POST_JSON');
     }
 
+
+    /**
+     * key-value消息-单发key-value消息
+     * @param $params
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendSingleKVMessage($params)
+    {
+        if (empty($params)
+            || empty($params['open_id'])
+            || empty($params['title'])
+            || empty($params['sub_title'])
+            || empty($params['url'])
+            || empty($params['content'])
+            || empty($params['footer_text'])
+            || empty($params['button_text'])) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_SINGLE_KV_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_user' => $params['open_id'],
+            'message' => [
+                'title'       => $params['title'],
+                'sub_title'   => $params['sub_title'],
+                'url'         => $params['url'],
+                'content'     => $params['content'],
+                'footer_text' => $params['footer_text'],
+                'button_text' => $params['button_text'],
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * key-value消息-给部分人发key-value消息
+     * @param $params
+     * @return bool
+     * @throws Exception
+     */
+    public function sendKVMessageToPart($params)
+    {
+        if (empty($params)
+            || empty($params['open_ids'])
+            || empty($params['title'])
+            || empty($params['sub_title'])
+            || empty($params['url'])
+            || empty($params['content'])
+            || empty($params['footer_text'])
+            || empty($params['button_text'])) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_KV_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_users' => $params['open_ids'],
+            'message'  => [
+                'title'       => $params['title'],
+                'sub_title'   => $params['sub_title'],
+                'url'         => $params['url'],
+                'content'     => $params['content'],
+                'footer_text' => $params['footer_text'],
+                'button_text' => $params['button_text'],
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * key-value消息-发key-value消息至群聊
+     * @param $params
+     * @return bool
+     * @throws Exception
+     */
+    public function sendKVMessageToGroup($params)
+    {
+        if (empty($params)
+            || empty($params['channel_id'])
+            || empty($params['title'])
+            || empty($params['sub_title'])
+            || empty($params['url'])
+            || empty($params['content'])
+            || empty($params['footer_text'])
+            || empty($params['button_text'])) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+
+        $input           = [];
+        $input['url']    = self::SEND_KV_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'channel_id' => $params['channel_id'],
+            'message'    => [
+                'title'       => $params['title'],
+                'sub_title'   => $params['sub_title'],
+                'url'         => $params['url'],
+                'content'     => $params['content'],
+                'footer_text' => $params['footer_text'],
+                'button_text' => $params['button_text'],
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 文件消息-单发文件消息
+     * @param $openId
+     * @param $mediaId
+     * @return bool
+     * @throws Exception
+     */
+    public function sendSingleFileMessage($openId, $mediaId)
+    {
+        if (empty($openId) || empty($mediaId)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_SINGLE_FILE_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_user' => $openId,
+            'message' => [
+                'media_id' => $mediaId,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 文件消息-群发文件消息
+     * @param $mediaId
+     * @return bool
+     * @throws Exception
+     */
+    public function sendFileMessageMass($mediaId)
+    {
+        if (empty($mediaId)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_FILE_MESSAGE_MASS_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'message' => [
+                'media_id' => $mediaId,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 文件消息-给部分人发文件消息
+     * @param $openIds
+     * @param $mediaId
+     * @return bool
+     * @throws Exception
+     */
+    public function sendFileMessageToPart($openIds, $mediaId)
+    {
+        if (empty($openIds) || !is_array($openIds) || empty($mediaId)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_FILE_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_users' => $openIds,
+            'message'  => [
+                'media_id' => $mediaId,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 文件消息-发文件消息至群聊
+     * @param $channelId
+     * @param $mediaId
+     * @return bool
+     * @throws Exception
+     */
+    public function sendFileMessageToGroup($channelId, $mediaId)
+    {
+        if (empty($channelId) || empty($mediaId)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_FILE_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'channel_id' => $channelId,
+            'message'    => [
+                'media_id' => $mediaId,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
 
     /**
      * 单发待办消息
@@ -564,7 +882,8 @@ class QingtuiApi
     public function sendSingleTODoMessage($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_TO_DO_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -588,7 +907,8 @@ class QingtuiApi
     public function sendSingleTODoMessageToPart($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_TO_DO_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
@@ -613,13 +933,111 @@ class QingtuiApi
     public function setPendingMessagesAsProcessed($messageId, $openId)
     {
         if (empty($messageId) || empty($openId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::SET_PENDING_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
         $input['params'] = [
             'msg_id'  => $messageId,
             'open_id' => $openId,
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 卡片消息-单发卡片消息
+     * @param $openId
+     * @param $content 格式比较复杂，请参考文档
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendSingleCardMessage($openId, $content)
+    {
+        if (empty($openId) || empty($content)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_SINGLE_CARD_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_user' => $openId,
+            'message' => [
+                'content' => $content,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 卡片消息-群发卡片消息
+     * @param $content
+     * 入参 content 格式比较复杂，请参考文档
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendCardMessageMass($content)
+    {
+        if (empty($content)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_CARD_MESSAGE_MASS_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'message' => [
+                'content' => $content,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 卡片消息-给部分人发卡片消息
+     * @param $openIds
+     * @param $content
+     * 入参 content 格式比较复杂，请参考文档
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendCardMessageToPart($openIds, $content)
+    {
+        if (empty($openIds) || !is_array($openIds) || empty($content)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_CARD_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'to_users' => $openIds,
+            'message'  => [
+                'content' => $content,
+            ]
+        ];
+        $this->response($input, 'POST_JSON');
+    }
+
+    /**
+     * 卡片消息-发卡片消息至群聊
+     * @param $channelId
+     * @param $content
+     * 入参 content 格式比较复杂，请参考文档
+     * @return false|string
+     * @throws Exception
+     */
+    public function sendCardMessageToGroup($channelId, $content)
+    {
+        if (empty($channelId) || empty($content)) {
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
+        }
+        $input           = [];
+        $input['url']    = self::SEND_CARD_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
+        $input['params'] = [
+            'channel_id' => $channelId,
+            'message'    => [
+                'content' => $content,
+            ]
         ];
         $this->response($input, 'POST_JSON');
     }
@@ -636,7 +1054,8 @@ class QingtuiApi
             || empty($params['org_id'])
             || empty($params['page_size'])
             || empty($params['request_page'])) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::GET_ORG_MEMBERS_URL;
@@ -676,7 +1095,8 @@ class QingtuiApi
     public function addMember($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::ADD_MEMBER_URL . '?access_token=' . $this->getAccessToken();
@@ -702,7 +1122,8 @@ class QingtuiApi
     public function deleteMember($userId)
     {
         if (empty($userId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::DELETE_MEMBER_URL . '?access_token=' . $this->getAccessToken();
@@ -721,7 +1142,8 @@ class QingtuiApi
     public function updateMember($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::UPDATE_MEMBER_URL . '?access_token=' . $this->getAccessToken();
@@ -744,7 +1166,8 @@ class QingtuiApi
     public function memberInfoChangeSync($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::MEMBER_INFO_CHANGE_SYNC_URL;
@@ -766,7 +1189,8 @@ class QingtuiApi
     public function getCompanyId($companyId)
     {
         if (empty($companyId)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::GET_COMPANY_ID_URL;
@@ -787,7 +1211,8 @@ class QingtuiApi
     public function addOrganization($parentId, $name)
     {
         if (empty($parentId) || empty($name)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::ADD_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -807,7 +1232,8 @@ class QingtuiApi
     public function deleteOrganization($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::DELETE_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -827,7 +1253,8 @@ class QingtuiApi
     public function modifyOrganization($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::MODIFY_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -855,7 +1282,8 @@ class QingtuiApi
     public function getOrganizationList($params)
     {
         if (empty($params)) {
-            return json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::GET_ORG_LIST_URL;
@@ -879,7 +1307,8 @@ class QingtuiApi
     public function getOrganizationDetails($orgId)
     {
         if (empty($orgId)) {
-            return json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::GET_ORG_DETAILS_URL;
@@ -899,7 +1328,8 @@ class QingtuiApi
     public function organizationChangeSync($syncTime)
     {
         if (empty($syncTime)) {
-            return json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
+            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
+            return false;
         }
         $input           = [];
         $input['url']    = self::ORG_SYNC_URL;
