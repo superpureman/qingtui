@@ -185,17 +185,16 @@ class QingtuiApi
             'page_size'    => $pageSize,
             'request_page' => $requestPage,
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
      * 通过 userid 获取openid
      * @param $userId
-     * @param bool $isJson
      * @return false|mixed|string
      * @throws Exception
      */
-    public function getOpenIdByUserId($userId, $isJson = true)
+    public function getOpenIdByUserId($userId)
     {
         $input           = [];
         $input['url']    = self::OPENID_GET_URL;
@@ -206,11 +205,7 @@ class QingtuiApi
             $input['params']['user_id'] = $userId;
         }
 
-        if ($isJson) {
-            $this->response($input);
-        } else {
-            return $this->call($input);
-        }
+        return $this->call($input);
     }
 
 
@@ -224,8 +219,7 @@ class QingtuiApi
     public function uploadMultimediaFile($type, $filePath)
     {
         if (!in_array($type, ['file', 'image']) || !file_exists($filePath)) {
-            echo json_encode(['errcode' => '40100', 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         if ($type == 'image') {
@@ -234,17 +228,14 @@ class QingtuiApi
             $extension = end($tmp);
 
             if (!in_array(strtolower($extension), $isAllow)) {
-                echo json_encode(['errcode' => '40005', 'errmsg' => '不合法的文件类型']);
-                return false;
+                throw new \Exception('不合法的文件类型', 40005);
             }
             if (filesize($filePath) > 1024 * 1024 * 3) {
-                echo json_encode(['errcode' => '40009', 'errmsg' => '不合法的图片文件大小']);
-                return false;
+                throw new \Exception('不合法的图片文件大小', 40009);
             }
         } else {
             if (filesize($filePath) > 1024 * 1024 * 30) {
-                echo json_encode(['errcode' => '40009', 'errmsg' => '不合法的图片文件大小']);
-                return false;
+                throw new \Exception('不合法的图片文件大小', 40009);
             }
         }
         $input        = [];
@@ -253,7 +244,7 @@ class QingtuiApi
         $input['params'] = [
             'media' => new \CURLFile($filePath, mime_content_type($filePath)),
         ];
-        $this->response($input, 'POST');
+        return $this->call($input, 'POST');
     }
 
 
@@ -267,8 +258,7 @@ class QingtuiApi
     public function sendSingleTextMessage($openId, $content)
     {
         if (empty($openId) || empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -280,7 +270,7 @@ class QingtuiApi
             ],
         ];
 
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -292,8 +282,7 @@ class QingtuiApi
     public function massTextMessaging($content)
     {
         if (empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -303,7 +292,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -316,8 +305,7 @@ class QingtuiApi
     public function sendTextMessagesPart($openIds, $content)
     {
         if (empty($openIds) || empty($content) || !is_array($openIds)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -328,7 +316,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -341,8 +329,7 @@ class QingtuiApi
     public function sendTextMessageToGroupChat($channelId, $content)
     {
         if (empty($channelId) || empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -353,7 +340,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -366,8 +353,7 @@ class QingtuiApi
     public function singlePictureMessage($openId, $mediaId)
     {
         if (empty($openId) || empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -378,7 +364,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -390,8 +376,7 @@ class QingtuiApi
     public function groupPictureMessage($mediaId)
     {
         if (empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -401,7 +386,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -414,8 +399,7 @@ class QingtuiApi
     public function sendPictureMessageToPart($openIds, $mediaId)
     {
         if (empty($openIds) || empty($mediaId) || !is_array($openIds)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -426,7 +410,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -439,8 +423,7 @@ class QingtuiApi
     public function sendPictureMessageToGroupChat($channelId, $mediaId)
     {
         if (empty($channelId) || empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -451,7 +434,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -463,8 +446,7 @@ class QingtuiApi
     public function singleTextCardMessage($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input        = [];
         $input['url'] = self::SEND_SINGLE_TEXT_CARD_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -481,7 +463,7 @@ class QingtuiApi
         if (isset($params['button_text'])) {
             $input['params']['message']['button_text'] = $params['button_text'];
         }
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -493,8 +475,7 @@ class QingtuiApi
     public function sendTextCardMessageToSomePeople($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input        = [];
         $input['url'] = self::SEND_TEXT_CARD_MESSAGE_TO_SOME_PEOPLE_URL . '?access_token=' . $this->getAccessToken();
@@ -511,7 +492,7 @@ class QingtuiApi
         if (isset($params['button_text'])) {
             $input['params']['message']['button_text'] = $params['button_text'];
         }
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -523,8 +504,7 @@ class QingtuiApi
     public function sendTextCardMessageToGroupChat($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input        = [];
         $input['url'] = self::SEND_TEXT_CARD_MESSAGE_TO_GROUP_CHAT_URL . '?access_token=' . $this->getAccessToken();
@@ -541,7 +521,7 @@ class QingtuiApi
         if (isset($params['button_text'])) {
             $input['params']['message']['button_text'] = $params['button_text'];
         }
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -559,8 +539,7 @@ class QingtuiApi
     public function sendSingleImageTextMessage($openId, $articleList)
     {
         if (!$openId || empty($articleList)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -571,7 +550,7 @@ class QingtuiApi
                 'article_list' => $articleList,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -589,8 +568,7 @@ class QingtuiApi
     public function sendImageTextMessageMass($articleList)
     {
         if (empty($articleList)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -600,7 +578,7 @@ class QingtuiApi
                 'article_list' => $articleList,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
 
@@ -625,8 +603,7 @@ class QingtuiApi
     public function sendImageTextMessagePart($openIds, $articleList)
     {
         if (empty($openIds) || !is_array($openIds) || empty($articleList)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -637,7 +614,7 @@ class QingtuiApi
                 'article_list' => $articleList,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -655,8 +632,7 @@ class QingtuiApi
     public function sendImageTextMessageToGroup($channelId, $articleList)
     {
         if (!$channelId || empty($articleList)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -667,7 +643,7 @@ class QingtuiApi
                 'article_list' => $articleList,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
 
@@ -687,8 +663,7 @@ class QingtuiApi
             || empty($params['content'])
             || empty($params['footer_text'])
             || empty($params['button_text'])) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -704,7 +679,7 @@ class QingtuiApi
                 'button_text' => $params['button_text'],
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -723,8 +698,7 @@ class QingtuiApi
             || empty($params['content'])
             || empty($params['footer_text'])
             || empty($params['button_text'])) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -740,7 +714,7 @@ class QingtuiApi
                 'button_text' => $params['button_text'],
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -759,8 +733,7 @@ class QingtuiApi
             || empty($params['content'])
             || empty($params['footer_text'])
             || empty($params['button_text'])) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
 
         $input           = [];
@@ -776,7 +749,7 @@ class QingtuiApi
                 'button_text' => $params['button_text'],
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -789,8 +762,7 @@ class QingtuiApi
     public function sendSingleFileMessage($openId, $mediaId)
     {
         if (empty($openId) || empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_FILE_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -800,7 +772,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -812,8 +784,7 @@ class QingtuiApi
     public function sendFileMessageMass($mediaId)
     {
         if (empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_FILE_MESSAGE_MASS_URL . '?access_token=' . $this->getAccessToken();
@@ -822,7 +793,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -835,8 +806,7 @@ class QingtuiApi
     public function sendFileMessageToPart($openIds, $mediaId)
     {
         if (empty($openIds) || !is_array($openIds) || empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_FILE_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
@@ -846,7 +816,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -859,8 +829,7 @@ class QingtuiApi
     public function sendFileMessageToGroup($channelId, $mediaId)
     {
         if (empty($channelId) || empty($mediaId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_FILE_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
@@ -870,7 +839,7 @@ class QingtuiApi
                 'media_id' => $mediaId,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -882,8 +851,7 @@ class QingtuiApi
     public function sendSingleTODoMessage($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_TO_DO_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -895,7 +863,7 @@ class QingtuiApi
                 'url'   => $params['url'],
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -907,8 +875,7 @@ class QingtuiApi
     public function sendSingleTODoMessageToPart($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_TO_DO_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
@@ -920,7 +887,7 @@ class QingtuiApi
                 'url'   => $params['url'],
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -933,8 +900,7 @@ class QingtuiApi
     public function setPendingMessagesAsProcessed($messageId, $openId)
     {
         if (empty($messageId) || empty($openId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SET_PENDING_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -942,7 +908,7 @@ class QingtuiApi
             'msg_id'  => $messageId,
             'open_id' => $openId,
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -955,8 +921,7 @@ class QingtuiApi
     public function sendSingleCardMessage($openId, $content)
     {
         if (empty($openId) || empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_SINGLE_CARD_MESSAGE_URL . '?access_token=' . $this->getAccessToken();
@@ -966,7 +931,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -979,8 +944,7 @@ class QingtuiApi
     public function sendCardMessageMass($content)
     {
         if (empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_CARD_MESSAGE_MASS_URL . '?access_token=' . $this->getAccessToken();
@@ -989,7 +953,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -1003,8 +967,7 @@ class QingtuiApi
     public function sendCardMessageToPart($openIds, $content)
     {
         if (empty($openIds) || !is_array($openIds) || empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_CARD_MESSAGE_TO_PART_URL . '?access_token=' . $this->getAccessToken();
@@ -1014,7 +977,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -1028,8 +991,7 @@ class QingtuiApi
     public function sendCardMessageToGroup($channelId, $content)
     {
         if (empty($channelId) || empty($content)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::SEND_CARD_MESSAGE_TO_GROUP_URL . '?access_token=' . $this->getAccessToken();
@@ -1039,7 +1001,7 @@ class QingtuiApi
                 'content' => $content,
             ]
         ];
-        $this->response($input, 'POST_JSON');
+        return $this->call($input, 'POST_JSON');
     }
 
     /**
@@ -1054,8 +1016,7 @@ class QingtuiApi
             || empty($params['org_id'])
             || empty($params['page_size'])
             || empty($params['request_page'])) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::GET_ORG_MEMBERS_URL;
@@ -1065,7 +1026,7 @@ class QingtuiApi
             'page_size'    => $params['page_size'],
             'request_page' => $params['request_page'],
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1083,7 +1044,7 @@ class QingtuiApi
             'page_size'    => $pageSize,
             'request_page' => $requestPage,
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1095,8 +1056,7 @@ class QingtuiApi
     public function addMember($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::ADD_MEMBER_URL . '?access_token=' . $this->getAccessToken();
@@ -1110,7 +1070,7 @@ class QingtuiApi
             'employee_id' => $params['employee_id'],
         ];
 
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1122,15 +1082,14 @@ class QingtuiApi
     public function deleteMember($userId)
     {
         if (empty($userId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::DELETE_MEMBER_URL . '?access_token=' . $this->getAccessToken();
         $input['params'] = [
             'user_id' => $userId,
         ];
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1142,8 +1101,7 @@ class QingtuiApi
     public function updateMember($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::UPDATE_MEMBER_URL . '?access_token=' . $this->getAccessToken();
@@ -1154,7 +1112,7 @@ class QingtuiApi
             'org_list'    => $params['org_list'],
             'employee_id' => $params['employee_id'],
         ];
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1166,8 +1124,7 @@ class QingtuiApi
     public function memberInfoChangeSync($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::MEMBER_INFO_CHANGE_SYNC_URL;
@@ -1177,7 +1134,7 @@ class QingtuiApi
             'page_size'    => $params['page_size'],
             'request_page' => $params['request_page'],
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1189,8 +1146,7 @@ class QingtuiApi
     public function getCompanyId($companyId)
     {
         if (empty($companyId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::GET_COMPANY_ID_URL;
@@ -1198,7 +1154,7 @@ class QingtuiApi
             'access_token' => $this->getAccessToken(),
             'number'       => $companyId,
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1211,8 +1167,7 @@ class QingtuiApi
     public function addOrganization($parentId, $name)
     {
         if (empty($parentId) || empty($name)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::ADD_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -1220,7 +1175,7 @@ class QingtuiApi
             'parent_id' => $parentId,
             'name'      => $name,
         ];
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1232,8 +1187,7 @@ class QingtuiApi
     public function deleteOrganization($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::DELETE_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -1241,7 +1195,7 @@ class QingtuiApi
             'org_id' => $params['org_id'],
         ];
 
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1253,8 +1207,7 @@ class QingtuiApi
     public function modifyOrganization($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::MODIFY_ORG_URL . '?access_token=' . $this->getAccessToken();
@@ -1270,7 +1223,7 @@ class QingtuiApi
         if (isset($params['auto_sequence'])) {
             $input['params']['autoSequence'] = $params['auto_sequence'];
         }
-        $this->response($input, 'POST_URL');
+        return $this->call($input, 'POST_URL');
     }
 
     /**
@@ -1282,8 +1235,7 @@ class QingtuiApi
     public function getOrganizationList($params)
     {
         if (empty($params)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::GET_ORG_LIST_URL;
@@ -1295,7 +1247,7 @@ class QingtuiApi
         if (isset($params['org_id'])) {
             $input['params']['org_id'] = $params['org_id'];
         }
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1307,8 +1259,7 @@ class QingtuiApi
     public function getOrganizationDetails($orgId)
     {
         if (empty($orgId)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::GET_ORG_DETAILS_URL;
@@ -1316,7 +1267,7 @@ class QingtuiApi
             'access_token' => $this->getAccessToken(),
             'org_id'       => $orgId,
         ];
-        $this->response($input);
+        return $this->call($input);
     }
 
     /**
@@ -1328,8 +1279,7 @@ class QingtuiApi
     public function organizationChangeSync($syncTime)
     {
         if (empty($syncTime)) {
-            echo json_encode(['errcode' => 40100, 'errmsg' => 'invalid param']);
-            return false;
+            throw new \Exception('invalid param', 40100);
         }
         $input           = [];
         $input['url']    = self::ORG_SYNC_URL;
@@ -1337,25 +1287,7 @@ class QingtuiApi
             'access_token' => $this->getAccessToken(),
             'sync_time'    => $syncTime,
         ];
-        $this->response($input);
-    }
-
-    /**
-     * 前端相应接口
-     * @param $input
-     * @param string $httpMethod
-     * @param string $desc
-     * @return false|string
-     */
-    private function response($input, $httpMethod = 'GET', $desc = '')
-    {
-        header('Content-Type:application/json');
-
-        try {
-            echo json_encode($this->call($input, $httpMethod, $desc));
-        } catch (Exception $e) {
-            echo json_encode(['errcode' => '-1', 'errmsg' => $e->getMessage()]);
-        }
+        return $this->call($input);
     }
 
     /**
