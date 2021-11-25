@@ -1215,7 +1215,7 @@ class QingtuiApi
             'org_id' => $params['org_id'],
         ];
         if (isset($params['name'])) {
-            $input['params']['name'] = $params;
+            $input['params']['name'] = $params['name'];
         }
         if (isset($params['sequence'])) {
             $input['params']['sequence'] = $params['sequence'];
