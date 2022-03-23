@@ -47,7 +47,7 @@ class QingtuiApi
     // 消息推送-发送消息-图片消息-发图片消息至群聊
     const SEND_PICTURE_MESSAGE_TO_GROUP_CHART_URL = 'https://open.qingtui.cn/v1/message/image/send/channel';
     // 消息推送-发送消息-文本卡片消息-单发文本卡片消息
-    const SEND_SINGLE_TEXT_CARD_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/textCard/send/singl';
+    const SEND_SINGLE_TEXT_CARD_MESSAGE_URL = 'https://open.qingtui.cn/v1/message/textCard/send/single';
     // 消息推送-发送消息-文本卡片消息-给部分人发文本卡片消息
     const SEND_TEXT_CARD_MESSAGE_TO_SOME_PEOPLE_URL = 'https://open.qingtui.cn/v1/message/textCard/send/mass';
     // 消息推送-发送消息-文本卡片消息-发文本卡片消息至群聊
